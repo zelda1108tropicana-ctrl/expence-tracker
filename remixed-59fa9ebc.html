@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共有家計簿</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#f5f4f0;min-height:100vh;color:#2c2c2a}
+.app{max-width:680px;margin:0 auto;padding:1rem}
+h1{font-size:18px;font-weight:500;margin-bottom:0.25rem}
+.subtitle{font-size:12px;color:#888;margin-bottom:1rem}
+
+.tabs{display:flex;gap:0;margin-bottom:1rem;background:#fff;border-radius:10px;border:0.5px solid #e0dfd8;overflow:hidden}
+.tab{flex:1;padding:10px 8px;font-size:13px;cursor:pointer;background:none;border:none;color:#888;transition:all 0.15s;font-weight:400}
+.tab.active{color:#993356;background:#fbeaf0;font-weight:500}
+.section{display:none}.section.active{display:block}
+
+.slider-wrap{background:#fff;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;border:0.5px solid #e0dfd8}
+.slider-label{font-size:12px;color:#888;margin-bottom:0.6rem}
+.ratio-display{display:flex;border-radius:8px;overflow:hidden;height:30px;margin-bottom:0.75rem}
+.ratio-s{background:#E6A8B8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;transition:width 0.2s}
+.ratio-o{background:#8AB4D4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;transition:width 0.2s}
+.slider-row{display:flex;align-items:center;gap:12px}
+.user-label{font-size:12px;font-weight:500;width:36px}
+.label-s{color:#993356}.label-o{color:#185FA5}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:#e0dfd8;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#E6A8B8;cursor:pointer}
+
+.form-card{background:#fff;border:0.5px solid #e0dfd8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.form-full{margin-bottom:8px}
+label.fl{font-size:12px;color:#888;display:block;margin-bottom:3px}
+input:not([type=range]),select{width:100%;padding:7px 10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#2c2c2a;outline:none;font-family:inherit}
+input:focus,select:focus{border-color:#E6A8B8;box-shadow:0 0 0 2px rgba(212,83,126,0.1)}
+.btn-add{width:100%;padding:10px;background:#D4537E;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.15s;margin-top:4px;font-family:inherit}
+.btn-add:hover{opacity:0.88}
+.btn-add:active{transform:scale(0.98)}
+
+.cats{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.cat-pill{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:0.5px solid #ccc;background:#f5f4f0;color:#666;transition:all 0.1s;font-family:inherit}
+.cat-pill.sel{color:#fff;border-color:transparent}
+
+.month-nav{display:flex;align-items:center;gap:12px;margin-bottom:0.75rem}
+.month-nav button{background:#fff;border:0.5px solid #ccc;border-radius:8px;padding:5px 12px;cursor:pointer;color:#666;font-size:14px;font-family:inherit}
+.month-nav button:hover{background:#f5f4f0}
+.month-label{font-size:15px;font-weight:500;color:#2c2c2a}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem}
+.filter-pill{padding:4px 10px;border-radius:16px;font-size:12px;cursor:pointer;border:0.5px solid #ccc;background:#f5f4f0;color:#666;transition:all 0.1s;font-family:inherit}
+.filter-pill.active{background:#fff;border-color:#E6A8B8;color:#993356;font-weight:500}
+
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem}
+.list-title{font-size:13px;font-weight:500;color:#2c2c2a}
+.btn-settle{padding:6px 14px;font-size:12px;background:#fff;border:0.5px solid #ccc;border-radius:8px;cursor:pointer;color:#666;font-family:inherit}
+.btn-settle:hover{background:#f5f4f0}
+
+.expense-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:0.5px solid #e0dfd8;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background 0.1s}
+.expense-item:hover{background:#fafaf8}
+.expense-item.checked{border-color:#E6A8B8;background:#fbeaf0}
+.exp-check{width:18px;height:18px;border-radius:5px;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.expense-item.checked .exp-check{background:#D4537E;border-color:#D4537E}
+.check-tick{color:#fff;font-size:12px;font-weight:700}
+.exp-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.exp-info{flex:1;min-width:0}
+.exp-main{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.exp-memo{font-size:13px;color:#2c2c2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-amount{font-size:14px;font-weight:500;color:#2c2c2a;white-space:nowrap}
+.exp-sub{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.exp-cat-label{font-size:11px;color:#888}
+.exp-date{font-size:11px;color:#888}
+.exp-payer{font-size:11px;padding:1px 6px;border-radius:10px}
+.payer-s{background:#fbeaf0;color:#993356}
+.payer-o{background:#e6f1fb;color:#185FA5}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.stat-card{background:#fff;border-radius:8px;padding:0.75rem 1rem;border:0.5px solid #e0dfd8}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-value{font-size:20px;font-weight:500;color:#2c2c2a}
+
+.chart-wrap{margin-bottom:1.5rem;background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0dfd8}
+.chart-title{font-size:13px;color:#888;margin-bottom:0.75rem}
+.chart-container{position:relative;height:240px;width:100%}
+.chart-container-bar{position:relative;height:240px;width:100%}
+.legend-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:12px;color:#666}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+
+.sync-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:#888;margin-bottom:0.75rem}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75}
+.sync-dot.syncing{background:#BA7517;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.chart-toggle{padding:4px 10px;font-size:12px;border:0.5px solid #ccc;border-radius:6px;background:#f5f4f0;color:#666;cursor:pointer;font-family:inherit;transition:all 0.1s}
+.chart-toggle.active{background:#fff;border-color:#E6A8B8;color:#993356;font-weight:500}
+
+.exp-actions{display:flex;gap:4px;flex-shrink:0}
+.exp-btn-edit,.exp-btn-del{width:28px;height:28px;border-radius:6px;border:0.5px solid #e0dfd8;background:#f5f4f0;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:#888;transition:all 0.1s;font-family:inherit}
+.exp-btn-edit:hover{background:#fbeaf0;border-color:#E6A8B8;color:#993356}
+.exp-btn-del:hover{background:#fdf0f0;border-color:#f0a0a0;color:#c0392b}
+
+.empty-state{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-box{background:#fff;border-radius:16px;padding:1.5rem;width:360px;max-width:95vw}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:1rem;color:#2c2c2a}
+.settle-summary{background:#f5f4f0;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem}
+.settle-row{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:#444}
+.settle-total{font-weight:500;border-top:0.5px solid #ddd;margin-top:8px;padding-top:10px}
+.btn-row{display:flex;gap:8px}
+.btn-cancel{flex:1;padding:10px;background:#f5f4f0;color:#666;border:0.5px solid #ccc;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-confirm{flex:1;padding:10px;background:#D4537E;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#2c2c2a;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <h1>
+      <input id="nameS" type="text" placeholder="名前A" oninput="updateNames()" style="width:72px;font-size:16px;font-weight:500;color:#993356;border:none;border-bottom:1.5px solid #E6A8B8;border-radius:0;padding:2px 4px;background:transparent;outline:none">
+      <span style="color:#aaa;font-weight:400;font-size:15px"> &amp; </span>
+      <input id="nameO" type="text" placeholder="名前B" oninput="updateNames()" style="width:72px;font-size:16px;font-weight:500;color:#185FA5;border:none;border-bottom:1.5px solid #8AB4D4;border-radius:0;padding:2px 4px;background:transparent;outline:none">
+      <span style="font-size:14px;color:#888;font-weight:400"> 家計簿</span>
+    </h1>
+    <div class="sync-bar">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncLabel">同期済み</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('add')">支出追加</button>
+    <button class="tab" onclick="switchTab('list')">履歴</button>
+    <button class="tab" onclick="switchTab('charts')">グラフ</button>
+  </div>
+
+  <!-- ADD -->
+  <div class="section active" id="tab-add">
+    <div class="slider-wrap">
+      <div class="slider-label">負担割合（10%単位）</div>
+      <div class="ratio-display">
+        <div class="ratio-s" id="ratioS" style="width:50%">A 50%</div>
+        <div class="ratio-o" id="ratioO" style="width:50%">B 50%</div>
+      </div>
+      <div class="slider-row">
+        <span class="user-label label-s" id="sliderLabelS">A</span>
+        <input type="range" min="0" max="100" step="10" value="50" id="ratioSlider" oninput="updateRatio(this.value)">
+        <span class="user-label label-o" id="sliderLabelO" style="text-align:right">B</span>
+      </div>
+      <div style="margin-top:10px">
+        <label class="fl">プリセット</label>
+        <select id="inputRatioPreset" onchange="applyPreset(this.value)">
+          <option value="">カスタム</option>
+          <option value="50">5:5</option>
+          <option value="60" id="preset60">6:4（A多め）</option>
+          <option value="40" id="preset40">4:6（B多め）</option>
+          <option value="100" id="preset100">Aのみ</option>
+          <option value="0" id="preset0">Bのみ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-row">
+        <div>
+          <label class="fl">金額 *</label>
+          <input type="number" id="inputAmount" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div>
+          <label class="fl">支払者 *</label>
+          <select id="inputPayer">
+            <option value="A" id="payerOptS">A</option>
+            <option value="B" id="payerOptO">B</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-full">
+        <label class="fl">カテゴリ</label>
+        <div class="cats" id="catPills"></div>
+      </div>
+      <div class="form-full">
+        <label class="fl">メモ（任意）</label>
+        <input type="text" id="inputMemo" placeholder="例：スーパー、映画など">
+      </div>
+      <div class="form-full">
+        <label class="fl">日付</label>
+        <input type="date" id="inputDate">
+      </div>
+      <button type="button" class="btn-add" id="addBtn" onclick="addExpense()">＋ 支出を追加</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="section" id="tab-list">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="filter-row" id="filterRow"></div>
+    <div class="list-header">
+      <span class="list-title" id="listTitle">支出一覧</span>
+      <div style="display:flex;gap:4px">
+        <button class="btn-settle" onclick="selectAll()">全選択</button>
+        <button class="btn-settle" onclick="deselectAll()">解除</button>
+        <button class="btn-settle" onclick="openSettle()">精算</button>
+      </div>
+    </div>
+    <div id="expenseList"></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section" id="tab-charts">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="month-label" id="monthLabelChart"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="chart-wrap">
+      <div class="chart-title">今月のカテゴリ別支出</div>
+      <div class="chart-container">
+        <canvas id="pieChart" role="img" aria-label="今月のカテゴリ別支出円グラフ">カテゴリ別支出データ</canvas>
+      </div>
+      <div class="legend-wrap" id="pieLegend"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">月別支出推移（直近6ヶ月）</div>
+      <div class="chart-container-bar">
+        <canvas id="barChart" role="img" aria-label="月別支出推移グラフ">月別推移データ</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-bg" id="editModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">支出を編集</div>
+    <div style="margin-bottom:8px">
+      <label class="fl">金額 *</label>
+      <input type="number" id="editAmount" min="0" inputmode="numeric">
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="fl">支払者</label>
+      <select id="editPayer">
+        <option value="A" id="editPayerOptS">A</option>
+        <option value="B" id="editPayerOptO">B</option>
+      </select>
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="fl">カテゴリ</label>
+      <div class="cats" id="editCatPills"></div>
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="fl">メモ（任意）</label>
+      <input type="text" id="editMemo" placeholder="任意で内容を入力...">
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="fl">日付</label>
+      <input type="date" id="editDate">
+    </div>
+    <div style="margin-bottom:12px">
+      <label class="fl">負担割合（10%単位）</label>
+      <div class="ratio-display" style="margin-bottom:8px">
+        <div class="ratio-s" id="editRatioS" style="width:50%">A 50%</div>
+        <div class="ratio-o" id="editRatioO" style="width:50%">B 50%</div>
+      </div>
+      <div class="slider-row">
+        <span class="user-label label-s" id="editLabelS">A</span>
+        <input type="range" min="0" max="100" step="10" id="editRatioSlider" oninput="updateEditRatio(this.value)">
+        <span class="user-label label-o" id="editLabelO" style="text-align:right">B</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeEdit()">キャンセル</button>
+      <button class="btn-confirm" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settle Modal -->
+<div class="modal-bg" id="settleModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">精算内容の確認</div>
+    <div id="settleContent"></div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeSettle()">キャンセル</button>
+      <button class="btn-confirm" onclick="confirmSettle()">精算完了</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'kakeibo-shiono-okano-v3';
+const RATIO_KEY = 'kakeibo-ratio-v3';
+const NAMES_KEY = 'kakeibo-names-v3';
+const CATS = [
+  {id:'food',label:'食費',color:'#E02020'},
+  {id:'eat',label:'外食',color:'#BA7517'},
+  {id:'trans',label:'交通',color:'#1D9E75'},
+  {id:'enter',label:'娯楽',color:'#7F77DD'},
+  {id:'daily',label:'日用品',color:'#D4C000'},
+  {id:'health',label:'医療',color:'#378ADD'},
+  {id:'other',label:'その他',color:'#888780'}
+];
+
+let state = {expenses:[]};
+let ratio = 50;
+let nameS = '';
+let nameO = '';
+let selectedCat = 'food';
+let selectedItems = new Set();
+let currentMonth = new Date().toISOString().slice(0,7);
+let activeFilter = 'all';
+let pieChartInst = null;
+let barChartInst = null;
+let lastStorageStr = '';
+let currentTab = 'add';
+
+function ns() { return nameS || 'A'; }
+function no() { return nameO || 'B'; }
+
+function updateNames() {
+  nameS = document.getElementById('nameS').value.trim();
+  nameO = document.getElementById('nameO').value.trim();
+  try { localStorage.setItem(NAMES_KEY, JSON.stringify({s:nameS,o:nameO})); } catch(e) {}
+  if (window.storage) window.storage.set(NAMES_KEY, JSON.stringify({s:nameS,o:nameO}), true).catch(()=>{});
+  // update slider labels
+  const ls = document.getElementById('sliderLabelS');
+  const lo = document.getElementById('sliderLabelO');
+  if (ls) ls.textContent = ns();
+  if (lo) lo.textContent = no();
+  // update payer options
+  const ps = document.getElementById('payerOptS');
+  const po = document.getElementById('payerOptO');
+  if (ps) { ps.value = ns(); ps.textContent = ns(); }
+  if (po) { po.value = no(); po.textContent = no(); }
+  // update presets
+  const p60 = document.getElementById('preset60');
+  const p40 = document.getElementById('preset40');
+  const p100 = document.getElementById('preset100');
+  const p0 = document.getElementById('preset0');
+  if (p60) p60.textContent = `6:4（${ns()}多め）`;
+  if (p40) p40.textContent = `4:6（${no()}多め）`;
+  if (p100) p100.textContent = `${ns()}のみ`;
+  if (p0) p0.textContent = `${no()}のみ`;
+  updateRatioDisplay();
+  // save names
+  try { localStorage.setItem(NAMES_KEY, JSON.stringify({s:nameS,o:nameO})); } catch(e) {}
+}
+
+let chartMode = 'both';
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function setSyncing(v) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.classList.toggle('syncing', v);
+  lbl.textContent = v ? '同期中...' : '同期済み';
+}
+
+// Storage helpers using localStorage (works as shared if same origin/device)
+// For real cross-device: uses Anthropic artifact storage API if available
+async function saveData() {
+  setSyncing(true);
+  const str = JSON.stringify(state);
+  const namesStr = JSON.stringify({s:nameS,o:nameO});
+  try {
+    if (window.storage) {
+      await window.storage.set(STORAGE_KEY, str, true);
+      await window.storage.set(RATIO_KEY, String(ratio), true);
+      await window.storage.set(NAMES_KEY, namesStr, true);
+    }
+    localStorage.setItem(STORAGE_KEY, str);
+    localStorage.setItem(RATIO_KEY, String(ratio));
+    localStorage.setItem(NAMES_KEY, namesStr);
+    lastStorageStr = str;
+  } catch(e) {
+    localStorage.setItem(STORAGE_KEY, str);
+    localStorage.setItem(RATIO_KEY, String(ratio));
+    localStorage.setItem(NAMES_KEY, namesStr);
+    lastStorageStr = str;
+  }
+  setTimeout(() => setSyncing(false), 500);
+}
+
+async function loadData() {
+  try {
+    let str = null, namesStr = null;
+    if (window.storage) {
+      const r = await window.storage.get(STORAGE_KEY, true);
+      if (r && r.value) str = r.value;
+      const r2 = await window.storage.get(RATIO_KEY, true);
+      if (r2 && r2.value) ratio = parseInt(r2.value);
+      const r3 = await window.storage.get(NAMES_KEY, true);
+      if (r3 && r3.value) namesStr = r3.value;
+    }
+    if (!str) str = localStorage.getItem(STORAGE_KEY);
+    if (!namesStr) namesStr = localStorage.getItem(NAMES_KEY);
+    if (!str) { const ls2 = localStorage.getItem(RATIO_KEY); if (ls2) ratio = parseInt(ls2); }
+    if (str) { state = JSON.parse(str); lastStorageStr = str; }
+    if (namesStr) {
+      const n = JSON.parse(namesStr);
+      nameS = n.s || ''; nameO = n.o || '';
+      document.getElementById('nameS').value = nameS;
+      document.getElementById('nameO').value = nameO;
+      updateNames();
+    }
+  } catch(e) {
+    const str = localStorage.getItem(STORAGE_KEY);
+    if (str) { state = JSON.parse(str); lastStorageStr = str; }
+  }
+  const sl = document.getElementById('ratioSlider');
+  if (sl) { sl.value = ratio; updateRatioDisplay(); }
+}
+
+async function pollSync() {
+  try {
+    let str = null;
+    if (window.storage) {
+      const r = await window.storage.get(STORAGE_KEY, true);
+      if (r && r.value) str = r.value;
+    }
+    if (!str) str = localStorage.getItem(STORAGE_KEY);
+    if (str && str !== lastStorageStr) {
+      lastStorageStr = str;
+      state = JSON.parse(str);
+      renderAll();
+      showToast('データが更新されました');
+    }
+  } catch(e) {}
+}
+
+function catColor(id) { return (CATS.find(c=>c.id===id)||CATS[6]).color; }
+function catLabel(id) { return (CATS.find(c=>c.id===id)||CATS[6]).label; }
+
+function updateRatio(v) { ratio = parseInt(v); updateRatioDisplay(); }
+function updateRatioDisplay() {
+  const s = document.getElementById('ratioS');
+  const o = document.getElementById('ratioO');
+  if (!s) return;
+  s.style.width = ratio + '%';
+  s.textContent = ratio > 12 ? `${ns()} ${ratio}%` : (ratio > 0 ? `${ratio}%` : '');
+  o.style.width = (100-ratio) + '%';
+  o.textContent = (100-ratio) > 12 ? `${no()} ${100-ratio}%` : ((100-ratio) > 0 ? `${100-ratio}%` : '');
+}
+function applyPreset(v) {
+  if (v === '') return;
+  ratio = parseInt(v);
+  document.getElementById('ratioSlider').value = ratio;
+  document.getElementById('inputRatioPreset').value = '';
+  updateRatioDisplay();
+}
+
+function buildCatPills() {
+  const wrap = document.getElementById('catPills');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  CATS.forEach(c => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'cat-pill' + (c.id === selectedCat ? ' sel' : '');
+    if (c.id === selectedCat) el.style.background = c.color;
+    el.textContent = c.label;
+    el.onclick = () => { selectedCat = c.id; buildCatPills(); };
+    wrap.appendChild(el);
+  });
+}
+
+function buildFilters() {
+  const wrap = document.getElementById('filterRow');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const opts = [{id:'all',label:'全て'}, ...CATS];
+  opts.forEach(c => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'filter-pill' + (c.id === activeFilter ? ' active' : '');
+    el.textContent = c.label;
+    el.onclick = () => { activeFilter = c.id; buildFilters(); renderList(); };
+    wrap.appendChild(el);
+  });
+}
+
+function addExpense() {
+  const amount = parseInt(document.getElementById('inputAmount').value);
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+  const payer = document.getElementById('inputPayer').value;
+  const memo = document.getElementById('inputMemo').value.trim();
+  const date = document.getElementById('inputDate').value || new Date().toISOString().slice(0,10);
+  const exp = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    amount, payer, memo, date,
+    cat: selectedCat,
+    ratioS: ratio,
+    settled: false
+  };
+  state.expenses.unshift(exp);
+  saveData();
+  document.getElementById('inputAmount').value = '';
+  document.getElementById('inputMemo').value = '';
+  renderAll();
+  showToast('支出を追加しました');
+  const btn = document.getElementById('addBtn');
+  btn.textContent = '✓ 追加しました';
+  setTimeout(() => { btn.textContent = '＋ 支出を追加'; }, 1500);
+}
+
+function getMonthExpenses(month) {
+  return state.expenses.filter(e => e.date.startsWith(month) && !e.settled);
+}
+
+function renderList() {
+  const list = document.getElementById('expenseList');
+  if (!list) return;
+  let exps = getMonthExpenses(currentMonth);
+  if (activeFilter !== 'all') exps = exps.filter(e => e.cat === activeFilter);
+  const total = exps.reduce((s,e) => s + e.amount, 0);
+  const el = document.getElementById('listTitle');
+  if (el) el.textContent = `${exps.length}件 合計 ¥${total.toLocaleString()}`;
+  if (exps.length === 0) {
+    list.innerHTML = '<div class="empty-state">この月の支出はありません</div>';
+    return;
+  }
+  list.innerHTML = exps.map(e => {
+    const sid = String(e.id);
+    const chk = selectedItems.has(sid);
+    const as = Math.round(e.amount * e.ratioS / 100);
+    const ao = e.amount - as;
+    const disp = e.memo || catLabel(e.cat);
+    return `<div class="expense-item${chk?' checked':''}" style="border-left:3px solid ${catColor(e.cat)}">
+      <div class="exp-check" data-id="${sid}" onclick="toggleItem(this.dataset.id)">${chk?'<span class="check-tick">✓</span>':''}</div>
+      <div class="exp-cat-dot" style="background:${catColor(e.cat)}" data-id="${sid}" onclick="toggleItem(this.dataset.id)"></div>
+      <div class="exp-info" data-id="${sid}" onclick="toggleItem(this.dataset.id)">
+        <div class="exp-main">
+          <span class="exp-memo">${disp}</span>
+          <span class="exp-amount">¥${e.amount.toLocaleString()}</span>
+        </div>
+        <div class="exp-sub">
+          <span class="exp-payer ${e.payer===ns()?'payer-s':'payer-o'}">${e.payer}</span>
+          <span class="exp-cat-label">${catLabel(e.cat)}</span>
+          <span class="exp-date">${e.date}</span>
+          <span class="exp-cat-label">${ns()}¥${as.toLocaleString()}/${no()}¥${ao.toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="exp-actions">
+        <button type="button" class="exp-btn-edit" data-id="${sid}" onclick="openEdit(this.dataset.id)" title="編集">✎</button>
+        <button type="button" class="exp-btn-del" data-id="${sid}" onclick="deleteExpense(this.dataset.id)" title="削除">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectAll() {
+  let exps = getMonthExpenses(currentMonth);
+  if (activeFilter !== 'all') exps = exps.filter(e => e.cat === activeFilter);
+  exps.forEach(e => selectedItems.add(String(e.id)));
+  renderList();
+}
+
+function deselectAll() {
+  selectedItems.clear();
+  renderList();
+}
+
+function toggleItem(id) {
+  const sid = String(id);
+  if (selectedItems.has(sid)) selectedItems.delete(sid);
+  else selectedItems.add(sid);
+  renderList();
+}
+
+let editingId = null;
+let editCat = 'food';
+let editRatio = 50;
+
+function openEdit(id) {
+  const e = state.expenses.find(x => String(x.id) === String(id));
+  if (!e) return;
+  editingId = id;
+  editCat = e.cat;
+  editRatio = e.ratioS;
+  document.getElementById('editAmount').value = e.amount;
+  document.getElementById('editMemo').value = e.memo || '';
+  document.getElementById('editDate').value = e.date;
+  document.getElementById('editRatioSlider').value = editRatio;
+  // payer options
+  const ps = document.getElementById('editPayerOptS');
+  const po = document.getElementById('editPayerOptO');
+  ps.value = ns(); ps.textContent = ns();
+  po.value = no(); po.textContent = no();
+  document.getElementById('editPayer').value = e.payer;
+  // labels
+  document.getElementById('editLabelS').textContent = ns();
+  document.getElementById('editLabelO').textContent = no();
+  updateEditRatio(editRatio);
+  buildEditCatPills();
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function updateEditRatio(v) {
+  editRatio = parseInt(v);
+  const s = document.getElementById('editRatioS');
+  const o = document.getElementById('editRatioO');
+  s.style.width = editRatio + '%';
+  s.textContent = editRatio > 12 ? `${ns()} ${editRatio}%` : (editRatio > 0 ? `${editRatio}%` : '');
+  o.style.width = (100 - editRatio) + '%';
+  o.textContent = (100 - editRatio) > 12 ? `${no()} ${100 - editRatio}%` : ((100 - editRatio) > 0 ? `${100 - editRatio}%` : '');
+}
+
+function buildEditCatPills() {
+  const wrap = document.getElementById('editCatPills');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  CATS.forEach(c => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'cat-pill' + (c.id === editCat ? ' sel' : '');
+    if (c.id === editCat) el.style.background = c.color;
+    el.textContent = c.label;
+    el.onclick = () => { editCat = c.id; buildEditCatPills(); };
+    wrap.appendChild(el);
+  });
+}
+
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+  editingId = null;
+}
+
+function saveEdit() {
+  const amount = parseInt(document.getElementById('editAmount').value);
+  if (!amount || amount <= 0) { showToast('金額を入力してください'); return; }
+  state.expenses = state.expenses.map(e => {
+    if (String(e.id) !== String(editingId)) return e;
+    return {
+      ...e,
+      amount,
+      payer: document.getElementById('editPayer').value,
+      memo: document.getElementById('editMemo').value.trim(),
+      date: document.getElementById('editDate').value,
+      cat: editCat,
+      ratioS: editRatio
+    };
+  });
+  saveData();
+  closeEdit();
+  renderAll();
+  showToast('支出を更新しました');
+}
+
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e => String(e.id) !== String(id));
+  selectedItems.delete(id);
+  saveData();
+  renderAll();
+  showToast('削除しました');
+}
+
+function openSettle() {
+  const sel = state.expenses.filter(e => selectedItems.has(String(e.id)));
+  if (sel.length === 0) { showToast('精算する支出を選択してください'); return; }
+  let sTotal=0,oTotal=0,sPaid=0,oPaid=0;
+  sel.forEach(e => {
+    const as = Math.round(e.amount*e.ratioS/100);
+    const ao = e.amount - as;
+    sTotal += as; oTotal += ao;
+    if (e.payer === ns()) sPaid += e.amount;
+    else oPaid += e.amount;
+  });
+  const total = sTotal + oTotal;
+  const sDiff = sPaid - sTotal;
+  let resultHTML = '';
+  if (sDiff > 0) resultHTML = `<span style="color:#185FA5">${no()} → ${ns()}へ ¥${Math.abs(sDiff).toLocaleString()} 支払い</span>`;
+  else if (sDiff < 0) resultHTML = `<span style="color:#993356">${ns()} → ${no()}へ ¥${Math.abs(sDiff).toLocaleString()} 支払い</span>`;
+  else resultHTML = '精算なし（均衡しています）';
+  document.getElementById('settleContent').innerHTML = `
+    <div class="settle-summary">
+      <div class="settle-row"><span>対象件数</span><span>${sel.length}件</span></div>
+      <div class="settle-row"><span>合計金額</span><span>¥${total.toLocaleString()}</span></div>
+      <div class="settle-row"><span>${ns()}の負担分</span><span>¥${sTotal.toLocaleString()}</span></div>
+      <div class="settle-row"><span>${no()}の負担分</span><span>¥${oTotal.toLocaleString()}</span></div>
+      <div class="settle-row"><span>${ns()}の支払済額</span><span>¥${sPaid.toLocaleString()}</span></div>
+      <div class="settle-row"><span>${no()}の支払済額</span><span>¥${oPaid.toLocaleString()}</span></div>
+      <div class="settle-row settle-total"><span>精算結果</span><span>${resultHTML}</span></div>
+    </div>`;
+  document.getElementById('settleModal').style.display = 'flex';
+}
+function closeSettle() { document.getElementById('settleModal').style.display = 'none'; }
+function confirmSettle() {
+  state.expenses = state.expenses.map(e => selectedItems.has(String(e.id)) ? {...e,settled:true} : e);
+  selectedItems.clear();
+  saveData();
+  closeSettle();
+  renderAll();
+  showToast('精算が完了しました');
+}
+
+function renderCharts() {
+  const exps = getMonthExpenses(currentMonth);
+  const sTotal = exps.reduce((s,e) => s + Math.round(e.amount*e.ratioS/100), 0);
+  const oTotal = exps.reduce((s,e) => s + Math.round(e.amount*(100-e.ratioS)/100), 0);
+  const total = sTotal + oTotal;
+  const sg = document.getElementById('statsGrid');
+  if (sg) sg.innerHTML = `
+    <div class="stat-card"><div class="stat-label">今月の総支出</div><div class="stat-value">¥${total.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">件数</div><div class="stat-value">${exps.length}件</div></div>
+    <div class="stat-card"><div class="stat-label" style="color:#993356">${ns()}の負担</div><div class="stat-value">¥${sTotal.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label" style="color:#185FA5">${no()}の負担</div><div class="stat-value">¥${oTotal.toLocaleString()}</div></div>
+  `;
+  // Pie
+  const catSums = {};
+  exps.forEach(e => { catSums[e.cat] = (catSums[e.cat]||0) + e.amount; });
+  const catKeys = Object.keys(catSums);
+  if (pieChartInst) pieChartInst.destroy();
+  const pieCanvas = document.getElementById('pieChart');
+  if (pieCanvas) {
+    if (catKeys.length > 0) {
+      pieChartInst = new Chart(pieCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: catKeys.map(catLabel),
+          datasets: [{data: catKeys.map(k=>catSums[k]), backgroundColor: catKeys.map(catColor), borderWidth: 3, borderColor: '#fff'}]
+        },
+        options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const pct=total>0?Math.round(c.parsed/total*100):0;return ` ¥${c.parsed.toLocaleString()} (${pct}%)`}}}}}
+      });
+      const pl = document.getElementById('pieLegend');
+      if (pl) pl.innerHTML = catKeys.map(k => {
+        const pct = total > 0 ? Math.round(catSums[k]/total*100) : 0;
+        return `<span class="legend-item"><span class="legend-dot" style="background:${catColor(k)}"></span>${catLabel(k)} ¥${catSums[k].toLocaleString()} (${pct}%)</span>`;
+      }).join('');
+    } else {
+      const pl = document.getElementById('pieLegend');
+      if (pl) pl.innerHTML = '<span style="font-size:13px;color:#aaa">データなし</span>';
+    }
+  }
+  // Bar
+  const months = [];
+  for (let i=5;i>=0;i--) {
+    const d = new Date(currentMonth+'-01');
+    d.setMonth(d.getMonth()-i);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const barS = months.map(m => state.expenses.filter(e=>e.date.startsWith(m)&&!e.settled).reduce((s,e)=>s+Math.round(e.amount*e.ratioS/100),0));
+  const barO = months.map(m => state.expenses.filter(e=>e.date.startsWith(m)&&!e.settled).reduce((s,e)=>s+Math.round(e.amount*(100-e.ratioS)/100),0));
+  const barTotal = barS.map((s,i) => s + barO[i]);
+  const barLabels = months.map(m => { const [,mo]=m.split('-'); return parseInt(mo)+'月'; });
+  if (barChartInst) barChartInst.destroy();
+  const barCanvas = document.getElementById('barChart');
+  if (barCanvas) {
+    const datasets = [];
+    if (chartMode === 'line' || chartMode === 'both') {
+      datasets.push({
+        type:'line', label:'合計', data:barTotal,
+        borderColor:'#7F77DD', backgroundColor:'rgba(127,119,221,0.1)',
+        borderWidth:2, pointRadius:4, pointBackgroundColor:'#7F77DD',
+        tension:0.3, fill: chartMode === 'line',
+        yAxisID: 'y',
+        order: 0
+      });
+    }
+    if (chartMode === 'bar' || chartMode === 'both') {
+      // カテゴリ別に積み上げ
+      CATS.forEach(cat => {
+        const data = months.map(m =>
+          state.expenses.filter(e=>e.date.startsWith(m)&&!e.settled&&e.cat===cat.id)
+            .reduce((s,e)=>s+e.amount,0)
+        );
+        if (data.some(v=>v>0)) {
+          datasets.push({
+            type:'bar', label:cat.label, data,
+            backgroundColor: cat.color + 'cc',
+            stack:'s', order:1,
+            barPercentage: 0.5,
+            categoryPercentage: 0.7
+          });
+        }
+      });
+    }
+    barChartInst = new Chart(barCanvas, {
+      data: { labels: barLabels, datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        layout: { padding: { right: 0 } },
+        plugins:{
+          legend:{display: chartMode !== 'line', position:'top', labels:{boxWidth:10, font:{size:11}, padding:10}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`}},
+          afterDraw: undefined
+        },
+        scales:{
+          x:{stacked: chartMode !== 'line', ticks:{font:{size:12}}, grid:{display:false}},
+          y:{
+            stacked: chartMode !== 'line',
+            position:'right',
+            beginAtZero: true,
+            ticks:{callback:v=>'¥'+v.toLocaleString(), font:{size:10}, maxTicksLimit:6, precision:0},
+            grid:{drawOnChartArea:true, color:'rgba(0,0,0,0.06)'}
+          }
+        }
+      },
+      plugins:[]
+    });
+  }
+}
+
+function updateMonthLabels() {
+  const [y,m] = currentMonth.split('-');
+  const lbl = `${y}年${parseInt(m)}月`;
+  const e1 = document.getElementById('monthLabel');
+  const e2 = document.getElementById('monthLabelChart');
+  if (e1) e1.textContent = lbl;
+  if (e2) e2.textContent = lbl;
+}
+
+function changeMonth(dir) {
+  const d = new Date(currentMonth+'-01');
+  d.setMonth(d.getMonth()+dir);
+  currentMonth = d.toISOString().slice(0,7);
+  updateMonthLabels();
+  renderAll();
+}
+
+function renderAll() {
+  buildCatPills();
+  renderList();
+  if (currentTab === 'charts') renderCharts();
+  buildFilters();
+}
+
+function switchTab(id) {
+  currentTab = id;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['add','list','charts'][i] === id);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if (id === 'charts') renderCharts();
+}
+
+// Init
+document.getElementById('inputDate').value = new Date().toISOString().slice(0,10);
+
+
+
+buildCatPills();
+updateMonthLabels();
+buildFilters();
+updateNames();
+
+loadData().then(() => {
+  renderAll();
+  setInterval(pollSync, 5000);
+});
+</script>
+</body>
+</html>
