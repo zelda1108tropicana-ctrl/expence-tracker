@@ -314,6 +314,28 @@ function no() { return state.nameO || 'B'; }
 function catColor(id) { return (CATS.find(c=>c.id===id)||CATS.find(c=>c.id==='other')).color; }
 function catLabel(id) { return (CATS.find(c=>c.id===id)||CATS.find(c=>c.id==='other')).label; }
 
+// 端数(0.5円単位で割り切れない場合)は特定の人に偏らないよう、
+// 支出ごとのIDから決まる方向で交互に振り分ける
+function idParity(id) {
+  const s = String(id);
+  let h = 0;
+  for (let i=0;i<s.length;i++) h = (h + s.charCodeAt(i)) % 2;
+  return h;
+}
+function splitShare(e) {
+  const raw = e.amount * e.ratioS / 100;
+  const base = Math.floor(raw);
+  const frac = raw - base;
+  let as;
+  if (Math.abs(frac - 0.5) < 1e-9) {
+    as = idParity(e.id) === 0 ? base : base + 1;
+  } else {
+    as = Math.round(raw);
+  }
+  const ao = e.amount - as;
+  return { as, ao };
+}
+
 function setSyncing(v) {
   const dot = document.getElementById('syncDot');
   const lbl = document.getElementById('syncLabel');
@@ -500,8 +522,7 @@ function renderList() {
   list.innerHTML = exps.map(e => {
     const sid = String(e.id);
     const chk = selectedItems.has(sid);
-    const as = Math.round(e.amount * e.ratioS / 100);
-    const ao = e.amount - as;
+    const { as, ao } = splitShare(e);
     const disp = e.memo || catLabel(e.cat);
     return `<div class="expense-item${chk?' checked':''}" style="border-left:3px solid ${catColor(e.cat)}">
       <div class="exp-check" data-id="${sid}" onclick="toggleItem(this.dataset.id)">${chk?'<span class="check-tick">✓</span>':''}</div>
@@ -608,8 +629,8 @@ function openSettle() {
   if (sel.length === 0) { showToast('精算する支出を選択してください'); return; }
   let sTotal=0,oTotal=0,sPaid=0,oPaid=0;
   sel.forEach(e => {
-    const as = Math.round(e.amount*e.ratioS/100);
-    sTotal += as; oTotal += (e.amount-as);
+    const { as, ao } = splitShare(e);
+    sTotal += as; oTotal += ao;
     if (e.payer === ns()) sPaid += e.amount; else oPaid += e.amount;
   });
   const total = sTotal + oTotal;
@@ -683,8 +704,8 @@ function unsettleExpense(id) {
 function renderCharts() {
  try {
   const exps = getMonthExpensesAll(currentMonth);
-  const sTotal = exps.reduce((s,e) => s + Math.round(e.amount*e.ratioS/100), 0);
-  const oTotal = exps.reduce((s,e) => s + Math.round(e.amount*(100-e.ratioS)/100), 0);
+  const sTotal = exps.reduce((s,e) => s + splitShare(e).as, 0);
+  const oTotal = exps.reduce((s,e) => s + splitShare(e).ao, 0);
   const total = sTotal + oTotal;
   const sg = document.getElementById('statsGrid');
   if (sg) sg.innerHTML = `
