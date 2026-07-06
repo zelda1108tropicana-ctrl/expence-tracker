@@ -291,6 +291,8 @@ const CATS = [
   {id:'enter',label:'娯楽',color:'#7F77DD'},
   {id:'daily',label:'日用品',color:'#D4C000'},
   {id:'health',label:'医療',color:'#378ADD'},
+  {id:'rent',label:'家賃',color:'#6B4E3D'},
+  {id:'clothes',label:'衣類',color:'#C6577A'},
   {id:'other',label:'その他',color:'#888780'}
 ];
 
@@ -309,8 +311,8 @@ let isLoaded = false;
 
 function ns() { return state.nameS || 'A'; }
 function no() { return state.nameO || 'B'; }
-function catColor(id) { return (CATS.find(c=>c.id===id)||CATS[6]).color; }
-function catLabel(id) { return (CATS.find(c=>c.id===id)||CATS[6]).label; }
+function catColor(id) { return (CATS.find(c=>c.id===id)||CATS.find(c=>c.id==='other')).color; }
+function catLabel(id) { return (CATS.find(c=>c.id===id)||CATS.find(c=>c.id==='other')).label; }
 
 function setSyncing(v) {
   const dot = document.getElementById('syncDot');
